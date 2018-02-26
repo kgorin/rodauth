@@ -38,6 +38,8 @@ module Rodauth
       :set_jwt_token
     )
 
+    auth_private_methods :json_response_body
+
     def session
       return @session if defined?(@session)
       return super unless use_jwt?
@@ -163,7 +165,7 @@ module Rodauth
 
     def before_view_recovery_codes
       super if defined?(super)
-      if json_request?
+      if use_jwt?
         json_response[:codes] = recovery_codes
         json_response[json_response_success_key] ||= "" if include_success_messages?
       end
@@ -201,11 +203,15 @@ module Rodauth
       return_json_response
     end
 
+    def _json_response_body(hash)
+      request.send(:convert_to_json, hash)
+    end
+
     def return_json_response
       response.status ||= json_response_error_status if json_response[json_response_error_key]
       set_jwt
       response['Content-Type'] ||= json_response_content_type
-      response.write(request.send(:convert_to_json, json_response))
+      response.write(_json_response_body(json_response))
       request.halt
     end
 
@@ -214,13 +220,13 @@ module Rodauth
     end
 
     def set_redirect_error_status(status)
-      if json_request? && json_response_custom_error_status?
+      if use_jwt? && json_response_custom_error_status?
         response.status = status
       end
     end
 
     def set_response_error_status(status)
-      if json_request? && !json_response_custom_error_status?
+      if use_jwt? && !json_response_custom_error_status?
         status = json_response_error_status
       end
 

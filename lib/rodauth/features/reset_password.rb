@@ -149,17 +149,13 @@ module Rodauth
     end
 
     def create_reset_password_key
-      ds = password_reset_ds
       transaction do
-        ds.where(Sequel::CURRENT_TIMESTAMP > reset_password_deadline_column).delete
-        if ds.empty?
-          if e = raised_uniqueness_violation{ds.insert(reset_password_key_insert_hash)}
-            # If inserting into the reset password table causes a violation, we can pull the 
-            # existing reset password key from the table, or reraise.
-            raise e unless @reset_password_key_value = get_password_reset_key(account_id)
-          end
-        else
-          @reset_password_key_value = get_password_reset_key(account_id)
+        if reset_password_key_value = get_password_reset_key(account_id)
+          @reset_password_key_value = reset_password_key_value
+        elsif e = raised_uniqueness_violation{password_reset_ds.insert(reset_password_key_insert_hash)}
+          # If inserting into the reset password table causes a violation, we can pull the 
+          # existing reset password key from the table, or reraise.
+          raise e unless @reset_password_key_value = get_password_reset_key(account_id)
         end
       end
     end
@@ -181,7 +177,9 @@ module Rodauth
     end
 
     def get_password_reset_key(id)
-      password_reset_ds(id).get(reset_password_key_column)
+      ds = password_reset_ds(id)
+      ds.where(Sequel::CURRENT_TIMESTAMP > reset_password_deadline_column).delete
+      ds.get(reset_password_key_column)
     end
 
     def login_form_footer

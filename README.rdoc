@@ -41,6 +41,7 @@ hashes by protecting access via database functions.
 * JWT (JSON API support for all other features)
 * Update Password Hash (when hash cost changes)
 * HTTP Basic Auth
+* Change Password Notify
 
 == Resources
 
@@ -287,8 +288,7 @@ or columns related to features that you don't need.
 First migration.  On PostgreSQL, this should be run with the +app+ account,
 on MySQL and Microsoft SQL Server this should be run with the +ph+ account.
 
-Note that these migrations require Sequel 4.35.0+.  If you are using older
-versions of Sequel, switch the :Bignum symbols to Bignum constants.
+Note that these migrations require Sequel 4.35.0+.
 
   Sequel.migration do
     up do
@@ -637,6 +637,7 @@ view the appropriate file in the doc directory.
 * {Login}[rdoc-ref:doc/login.rdoc]
 * {Logout}[rdoc-ref:doc/logout.rdoc]
 * {Change Password}[rdoc-ref:doc/change_password.rdoc]
+* {Change Password Notify}[rdoc-ref:doc/change_password_notify.rdoc]
 * {Change Login}[rdoc-ref:doc/change_login.rdoc]
 * {Reset Password}[rdoc-ref:doc/reset_password.rdoc]
 * {Create Account}[rdoc-ref:doc/create_account.rdoc]
@@ -648,16 +649,19 @@ view the appropriate file in the doc directory.
 * {OTP}[rdoc-ref:doc/otp.rdoc]
 * {Recovery Codes}[rdoc-ref:doc/recovery_codes.rdoc]
 * {SMS Codes}[rdoc-ref:doc/sms_codes.rdoc]
+* {Verify Login Change}[rdoc-ref:doc/verify_login_change.rdoc]
 * {Verify Change Login}[rdoc-ref:doc/verify_change_login.rdoc]
 * {Verify Account Grace Period}[rdoc-ref:doc/verify_account_grace_period.rdoc]
 * {Password Grace Period}[rdoc-ref:doc/password_grace_period.rdoc]
 * {Password Complexity}[rdoc-ref:doc/password_complexity.rdoc]
 * {Disallow Password Reuse}[rdoc-ref:doc/disallow_password_reuse.rdoc]
+* {Update Password Hash}[rdoc-ref:doc/update_password_hash.rdoc]
 * {Password Expiration}[rdoc-ref:doc/password_expiration.rdoc]
 * {Account Expiration}[rdoc-ref:doc/account_expiration.rdoc]
 * {Session Expiration}[rdoc-ref:doc/session_expiration.rdoc]
 * {Single Session}[rdoc-ref:doc/single_session.rdoc]
 * {JWT}[rdoc-ref:doc/jwt.rdoc]
+* {HTTP Basic Auth}[rdoc-ref:doc/http_basic_auth.rdoc]
 
 === Calling Rodauth in the Routing Tree
 
@@ -845,7 +849,7 @@ via LDAP, you can use the +simple_ldap_authenticator+ library:
     enable :login, :logout
     require_bcrypt? false
     password_match? do |password|
-      SimpleLdapAuthenticator.valid?(account.username, password)
+      SimpleLdapAuthenticator.valid?(account[:email], password)
     end
   end
 
@@ -940,7 +944,7 @@ inside the middleware, you can easily provide a way for your
 application to call Rodauth methods.
 
 Here are some examples of integrating Rodauth into applications that
-doesn't use Roda:
+don't use Roda:
 
 * {Ginatra, a Sinatra-based git repository viewer}[https://github.com/jeremyevans/ginatra/commit/28108ebec96e8d42596ee55b01c3f7b50c155dd1] 
 * {Rodauth's demo site as a Rails application}[https://github.com/jeremyevans/rodauth-demo-rails] (
@@ -1121,22 +1125,6 @@ benefit from precompiling your rodauth templates:
     # ...
   end
   precompile_rodauth_templates
-
-== Upgrading from 0.9.x
-
-To upgrade from 0.9.x to the current version, if you were using
-the account_valid_password database function, you need to drop
-it and add the two database functions listed in the migration
-section above.  You can add the following code to a migration to
-accomplish that:
-
-  require 'rodauth/migrations'
-  run "DROP FUNCTION account_valid_password(int8, text);"
-  Rodauth.create_database_authentication_functions(self)
-  run "REVOKE ALL ON FUNCTION rodauth_get_salt(int8) FROM public"
-  run "REVOKE ALL ON FUNCTION rodauth_valid_password_hash(int8, text) FROM public"
-  run "GRANT EXECUTE ON FUNCTION rodauth_get_salt(int8) TO ${DATABASE_NAME}"
-  run "GRANT EXECUTE ON FUNCTION rodauth_valid_password_hash(int8, text) TO ${DATABASE_NAME}"
 
 == Similar Projects
 

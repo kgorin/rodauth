@@ -17,6 +17,7 @@ module Rodauth
     auth_value_method :account_status_column, :status_id
     auth_value_method :account_unverified_status_value, 1
     auth_value_method :accounts_table, :accounts
+    auth_value_method :cache_templates, true
     auth_value_method :default_redirect, '/'
     auth_value_method :invalid_field_error_status, 422
     auth_value_method :invalid_key_error_status, 401
@@ -235,9 +236,10 @@ module Rodauth
     end
 
     def button_opts(value, opts)
-      opts = {:locals=>{:value=>value, :opts=>opts}}
+      opts = Hash[template_opts].merge!(opts)
+      opts[:locals] = {:value=>value, :opts=>opts}
       opts[:path] = template_path('button')
-      opts[:cache] = true
+      opts[:cache] = cache_templates
       opts[:cache_key] = :rodauth_button
       opts
     end
@@ -284,8 +286,6 @@ module Rodauth
       session[session_key] = account_session_value
     end
 
-    private
-
     # Return a string for the parameter name.  This will be an empty
     # string if the parameter doesn't exist.
     def param(key)
@@ -298,6 +298,8 @@ module Rodauth
       value = request.params[key]
       value.to_s unless value.nil?
     end
+
+    private
 
     def redirect(path)
       request.redirect(path)
@@ -516,7 +518,7 @@ module Rodauth
       opts = template_opts.dup
       opts[:locals] = opts[:locals] ? opts[:locals].dup : {}
       opts[:locals][:rodauth] = self
-      opts[:cache] = true
+      opts[:cache] = cache_templates
       opts[:cache_key] = :"rodauth_#{page}"
 
       scope.instance_exec do

@@ -1,5 +1,33 @@
 === master
 
+* Remove calling request [] method to get request param values, as it is deprecated in the current version of rack (jeremyevans)
+
+=== 1.15.0 (2018-01-29)
+
+* Add create_account_set_password? and verify_account_set_password? methods to delay setting password until account verification (jeremyevans)
+
+=== 1.14.0 (2017-12-19)
+
+* Don't allow unlocking expired accounts when using account_expiration and lockout features (jeremyevans)
+
+* Don't allow resetting passwords for expired accounts when using account_expiration and reset_password features (jeremyevans)
+
+* Add change_password_notify feature for emailing when user uses change password feature (jeremyevans)
+
+=== 1.13.0 (2017-11-21)
+
+* Add json_response_body(hash) configuration method to jwt feature (jeremyevans)
+
+* Support invalid_previous_password_message configuration method in change_password feature (jeremyevans)
+
+* Use custom error statuses if only_json? and json_response_custom_error_status? are true even if request isn't in json format (jeremyevans)
+
+* Add cache_templates configuration method for disabling caching of templates (adam12, jeremyevans) (#46)
+
+=== 1.12.0 (2017-10-03)
+
+* [SECURITY] Clear expired password reset key for account before retrieving password reset key (chanks, jeremyevans) (#43)
+
 * Update migrations to work with Sequel 5 (jeremyevans)
 
 * Add require_http_basic_auth configuration method to http_basic_auth feature (jeremyevans) (#41)

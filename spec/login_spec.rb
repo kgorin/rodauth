@@ -119,7 +119,7 @@ describe 'Rodauth login feature' do
       session_key :login_email
       account_from_session{DB[:accounts].first(:email=>session_value)}
       account_session_value{account[:email]}
-      login_param{request['lp']}
+      login_param{param('lp')}
       login_additional_form_tags "<input type='hidden' name='lp' value='l' />"
       password_param 'p'
       login_redirect{"/foo/#{account[:email]}"}
@@ -152,6 +152,30 @@ describe 'Rodauth login feature' do
     visit '/auth/lout'
     click_button 'Logout'
     page.current_path.must_equal '/auth/lin'
+  end
+
+  it "should use correct redirect paths when using prefix" do
+    rodauth do
+      enable :login, :logout
+      prefix '/auth'
+    end
+    roda do |r|
+      r.on 'auth' do
+        r.rodauth
+        rodauth.require_login
+      end
+      rodauth.send("#{r.remaining_path[1..-1]}_redirect")
+    end
+
+    visit '/login'
+    page.html.must_equal '/'
+    visit '/logout'
+    page.html.must_equal '/auth/login'
+    visit '/require_login'
+    page.html.must_equal '/auth/login'
+
+    visit '/auth'
+    page.current_path.must_equal '/auth/login'
   end
 
   it "should login and logout via jwt" do
